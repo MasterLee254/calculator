@@ -3,6 +3,7 @@ function add(a, b) { return a + b; }
 function subtract(a, b) { return a - b; }
 function multiply(a, b) { return a * b; }
 function divide(a, b) { return b !== 0 ? a / b : "Error"; }
+function percentage(a) { return a / 100; }
 
 // Handle operations
 function operate(operator, a, b) {
@@ -13,10 +14,12 @@ function operate(operator, a, b) {
         case '-': return subtract(a, b);
         case '×': return multiply(a, b);
         case '÷': return divide(a, b);
+        case '%': return percentage(a);
         default: return null;
     }
 }
 
+let currentDisplay = "0";
 let firstOperand = "";
 let secondOperand = "";
 let currentOperator = null;
@@ -43,40 +46,57 @@ buttons.forEach(button => {
 
 function clear() {
     display.textContent = '0';
+    currentDisplay = "0";
     firstOperand = '';
     secondOperand = '';
     currentOperator = null;
 }
 
 function backspace() {
-    if (display.textContent.length === 1) {
-        display.textContent = '0';
+    if (currentDisplay.length === 1) {
+        currentDisplay = "0";
     } else {
-        display.textContent = display.textContent.slice(0, -1);
+        currentDisplay = currentDisplay.slice(0, -1);
     }
+    updateDisplay();
 }
 
 function appendNumber(number) {
-    if (display.textContent === '0' || shouldResetDisplay) {
-        display.textContent = number;
+    if (currentDisplay === '0' || shouldResetDisplay) {
+        currentDisplay = number;
         shouldResetDisplay = false;
-    } else if (!(number === '.' && display.textContent.includes('.'))) {
-        display.textContent += number;
+    } else if (!(number === '.' && currentDisplay.includes('.'))) {
+        currentDisplay += number;
     }
+    updateDisplay();
 }
 
 function setOperator(operator) {
     if (currentOperator !== null) evaluate();
-    firstOperand = display.textContent;
+    firstOperand = currentDisplay;
     currentOperator = operator;
-    shouldResetDisplay = true;
+    currentDisplay += ` ${operator} `;
+    shouldResetDisplay = false;
+    updateDisplay();
 }
 
 function evaluate() {
     if (currentOperator === null || shouldResetDisplay) return;
-    secondOperand = display.textContent;
-    const result = operate(currentOperator, firstOperand, secondOperand);
-    display.textContent = result === "Error" ? "Cannot divide by 0" : Math.round(result * 10000) / 10000;
+    const parts = currentDisplay.split(` ${currentOperator} `);
+    if (parts.length < 2) return; // Ignore if only one part
+
+    secondOperand = parts[1];
+    let result = operate(currentOperator, firstOperand, secondOperand);
+    if (result === "Error") {
+        currentDisplay = "Cannot divide by 0";
+    } else {
+        currentDisplay = Math.round(result * 10000) / 10000 + '';
+    }
+    updateDisplay();
     firstOperand = result;
     currentOperator = null;
+}
+
+function updateDisplay() {
+    display.textContent = currentDisplay;
 }
